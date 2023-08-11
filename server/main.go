@@ -6,8 +6,7 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/gorilla/mux"
-	"github.com/gorilla/handlers"
+    "github.com/gorilla/websocket"
 )
 
 type Position struct {
@@ -29,22 +28,34 @@ var mainGame = Game{}
 // todo should switch to uid
 var idCounter = 0
 
+var upgrader = websocket.Upgrader{
+    CheckOrigin: func(r *http.Request) bool { return true },
+}
+
 func main() {
-    r := mux.NewRouter()
+    http.HandleFunc("/ws", func (w http.ResponseWriter, r *http.Request) {
+        conn, err := upgrader.Upgrade(w, r, nil)
+        if err != nil {
+            log.Print("upgrade failed: ", err)
+            return
+        }
+        defer conn.Close()
 
-    r.HandleFunc("/registerPlayer", registerPlayer).Methods(http.MethodPost, http.MethodOptions)
-    r.HandleFunc("/getGameStatus", getGameStatus).Methods(http.MethodGet)
-    r.HandleFunc("/updatePlayer", updatePlayer).Methods(http.MethodPut, http.MethodOptions)
+        log.Print("Websocket connection initiated")
 
-    r.Use(mux.CORSMethodMiddleware(r))
- 
+        for {
+            _, message, err := conn.ReadMessage()
+            if err != nil {
+                log.Println("read failed:", err)
+                break
+            }
 
-    headersOk := handlers.AllowedHeaders([]string{"X-Requested-With", "Content-Type"})
-    originsOk := handlers.AllowedOrigins([]string{"*"})
-    methodsOk := handlers.AllowedMethods([]string{"GET", "HEAD", "POST", "PUT", "OPTIONS"})
+            log.Print(string(message))
+        }
+    })
 
-    log.Print("Listenning on port 8080")
-    log.Fatal(http.ListenAndServe(":8080", handlers.CORS(headersOk, originsOk, methodsOk)(r)))
+    log.Print("Listening on port 8080")
+    http.ListenAndServe(":8080", nil)
 }
 
 func registerPlayer(w http.ResponseWriter, r *http.Request) {

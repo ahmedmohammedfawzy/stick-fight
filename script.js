@@ -66,7 +66,7 @@ async function init() {
 
     socket.onopen = () => {
         console.log("[open] Connection established");
-        socket.send("My name is John");
+        window.requestAnimationFrame(loop);
     };
 
     socket.onmessage = event => {
@@ -87,7 +87,6 @@ async function init() {
         console.log(error)
     };
 
-    window.requestAnimationFrame(loop);
 }
 
 async function loop() {

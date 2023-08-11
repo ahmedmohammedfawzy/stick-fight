@@ -3,6 +3,7 @@ const CANVAS_HEIGHT = 300;
 /** @type {HTMLCanvasElement} */
 const canvas = document.getElementById("canvas");
 const ctx = canvas.getContext("2d");
+const socket = new WebSocket("ws://localhost:8080/ws");
 
 const keys = {
     isKeyADown: false,
@@ -33,14 +34,11 @@ const player = {
 }
 
 async function init() {
-    window.requestAnimationFrame(loop);
-
     window.addEventListener("keydown", function(event) {
         if (event.defaultPrevented) {
             return;
         }
 
-        console.log(event.code);
         if (event.code === "KeyA") {
             keys.isKeyADown = true;
         } else if (event.code === "KeyD"){
@@ -65,24 +63,34 @@ async function init() {
         event.preventDefault();
     }, true);
 
-    const data = {
-        x: 0,
-        y: 0
-    }
-    const response = await fetch("http://localhost:8080/registerPlayer", {
-        method: "POST",
-        mode: "cors", 
-        headers: {
-            "Content-Type": "application/json",
-        },
-        body: JSON.stringify(data),
-    });
 
-    let responseJson = await response.json();
-    player.id = responseJson.id;
+    socket.onopen = () => {
+        console.log("[open] Connection established");
+        socket.send("My name is John");
+    };
+
+    socket.onmessage = event => {
+        console.log(`[message] Data received from server: ${event.data}`);
+    };
+
+    socket.onclose = event => {
+        if (event.wasClean) {
+            console.log(`[close] Connection closed cleanly, code=${event.code} reason=${event.reason}`);
+        } else {
+            // e.g. server process killed or network down
+            // event.code is usually 1006 in this case
+            console.log('[close] Connection died');
+        }
+    };
+
+    socket.onerror = error => {
+        console.log(error)
+    };
+
+    window.requestAnimationFrame(loop);
 }
 
-function loop() {
+async function loop() {
 
     canvas.width = window.innerWidth;
     canvas.height = 300;
@@ -90,8 +98,13 @@ function loop() {
     ctx.clearRect(0, 0, window.innerWidth, CANVAS_HEIGHT);
 
     player.draw();
+    socket.send(`x:${player.x}, y:${player.y}`)
 
     window.requestAnimationFrame(loop);
 }
 
+
+
 init();
+
+

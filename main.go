@@ -49,7 +49,7 @@ func main() {
 		}
 	})
 
-	http.Handle("/", http.FileServer(http.Dir("./public")))
+	http.Handle("/", http.FileServer(http.Dir("./client/public/")))
 
 	log.Print("Listening on port 8080")
 	http.ListenAndServe(":8080", nil)

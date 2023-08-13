@@ -1,8 +1,7 @@
 const CANVAS_HEIGHT = 300;
 
-/** @type {HTMLCanvasElement} */
-const canvas = document.getElementById("canvas");
-const ctx = canvas.getContext("2d");
+const canvas = document.getElementById("canvas") as HTMLCanvasElement;
+const ctx = canvas.getContext("2d")!;
 const socket = new WebSocket("ws://192.168.1.9:8080/ws");
 
 const keys = {
